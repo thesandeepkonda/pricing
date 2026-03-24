@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class ProductPriceDTO {
     private Long varientId;
-    private double price;
+    private Double price;
 
     private Long categoryId; // ✅ ADD THIS
 }

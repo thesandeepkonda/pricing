@@ -15,7 +15,7 @@ public class LocalTaxServiceImpl implements TaxService {
     private final TaxRuleRepository taxRuleRepository;
 
     @Override
-    public Long calculateTax(String countryCode, Long price) {
+    public double calculateTax(String countryCode, Double price) {
 
         TaxRule taxRule = taxRuleRepository
                 .findByCountry(countryCode)
@@ -33,11 +33,11 @@ public class LocalTaxServiceImpl implements TaxService {
                 .findByCountry(request.getCountryCode())
                 .orElseThrow(() -> new RuntimeException("Tax rule not found"));
 
-        Long price = request.getPrice();
+        Double price = request.getPrice();
         Long taxRate = taxRule.getTaxRate();
 
-        Long taxAmount = (price * taxRate) / 100;
-        Long finalPrice = price + taxAmount;
+        Double taxAmount = (price * taxRate) / 100;
+        Double finalPrice = price + taxAmount;
 
         return TaxResponseDTO.builder()
                 .price(price)

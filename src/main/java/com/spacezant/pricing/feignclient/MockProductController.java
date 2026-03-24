@@ -15,7 +15,7 @@ public class MockProductController {
         return ids.stream().map(id -> {
             ProductPriceDTO p = new ProductPriceDTO();
             p.setVarientId(id);
-            p.setPrice(100.0); // Everything costs 100
+            p.setPrice(1000.0); // Everything costs 100
             return p;
         }).toList();
     }

@@ -12,9 +12,9 @@ public class DiscountResponseDTO {
     private String discountName;
 
     private String categoryType;
-
-    private Long discountValue;
-    private Long maxDiscount;
+    private Long minOrderAmount;
+    private Double discountValue;
+    private Double maxDiscount;
 
     private String description;
 

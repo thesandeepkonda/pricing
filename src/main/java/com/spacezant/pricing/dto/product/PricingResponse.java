@@ -9,7 +9,7 @@ public class PricingResponse {
 
     private String currency;
 
-    private Long basePrice;
+    private Double basePrice;
 
     private String status;
 }

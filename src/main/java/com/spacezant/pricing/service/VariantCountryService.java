@@ -134,19 +134,19 @@ public class VariantCountryService {
         Long productId = variantCountry.getVariant().getProductId();
 
         // 2️⃣ Discount
-        Long discount = discountService.getBestCategoryDiscountByProduct(
+        Double discount = discountService.getBestCategoryDiscountByProduct(
                 productId,
                 variantCountry.getBasePrice()
         );
 
-        if (discount == null) discount = 0L;
+        if (discount == null) discount = (double) 0L;
 
         double afterDiscount = variantCountry.getBasePrice() - discount;
 
         // 3️⃣ Tax
-        Long taxAmountLong = taxService.calculateTax(
+        Double taxAmountLong = taxService.calculateTax(
                 countryCode,
-                Math.round(afterDiscount)
+                (double) Math.round(afterDiscount)
         );
 
         double tax = taxAmountLong != null ? taxAmountLong : 0;
@@ -161,7 +161,7 @@ public class VariantCountryService {
                 .discount(discount)
                 .priceAfterDiscount(afterDiscount)
                 .tax(tax)
-                .finalPrice((long) finalPrice)
+                .finalPrice((Double) finalPrice)
                 .build();
     }
 }

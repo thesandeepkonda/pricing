@@ -12,13 +12,13 @@ public class PricingDetailResponse {
     private String countryCode;
     private String currency;
 
-    private Long basePrice;
+    private Double basePrice;
 
-    private double discount;
+    private Double discount;
 
-    private double priceAfterDiscount;
+    private Double priceAfterDiscount;
 
-    private double tax;
+    private Double tax;
 
-    private Long finalPrice;
+    private Double finalPrice;
 }

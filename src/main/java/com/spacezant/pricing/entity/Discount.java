@@ -24,8 +24,8 @@ public class Discount {
     private DiscountCategoryType categoryType;
 
     // VALUE (Long instead of Double)
-    private Long discountValue;
-    private Long maxDiscount;
+    private Double discountValue;
+    private Double maxDiscount;
 
     private String description;
 
@@ -52,6 +52,7 @@ public class Discount {
     // 🔹 COUNTRY MAPPING (YOUR FLOW - KEEP)
     @OneToMany(mappedBy = "discount", cascade = CascadeType.ALL)
     private List<CountryDiscount> countryDiscounts;
+
 
 //    // 🔥 ADD THIS (IMPORTANT FOR YOUR SYSTEM)
 //    @OneToMany(mappedBy = "discount", cascade = CascadeType.ALL)

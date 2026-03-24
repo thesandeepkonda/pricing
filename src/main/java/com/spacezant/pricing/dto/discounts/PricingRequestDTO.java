@@ -11,5 +11,5 @@ public class PricingRequestDTO {
 
     private Integer quantity;
 
-    private Long price; // in paise
+    private Double price; // in paise
 }

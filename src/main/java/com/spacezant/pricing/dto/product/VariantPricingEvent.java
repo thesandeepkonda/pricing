@@ -6,10 +6,10 @@ import lombok.Data;
 public class VariantPricingEvent {
 
     private Long variantId;
-    private Long mrp;
+    private Double mrp;
 
-    private Long discountAmount;
-    private Long finalAmount;
+    private Double discountAmount;
+    private Double finalAmount;
 
     private String discountName; // ✅ ADD THIS
 

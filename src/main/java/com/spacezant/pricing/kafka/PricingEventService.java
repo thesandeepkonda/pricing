@@ -29,11 +29,11 @@ public class PricingEventService {
             return;
         }
 
-        Long mrp = pricingEvent.getMrp() != null
-                ? pricingEvent.getMrp().longValue()
-                : 0L;
+        Double mrp = (double) (pricingEvent.getMrp() != null
+                        ? pricingEvent.getMrp().longValue()
+                        : 0L);
 
-        long maxDiscount = 0L;
+        Double maxDiscount = 0.0;
         String discountName = "NO DISCOUNT";
 
         if (pricingEvent.getDiscountIds() != null) {
@@ -49,7 +49,7 @@ public class PricingEventService {
                     continue;
                 }
 
-                long calculatedDiscount = 0L;
+                Double calculatedDiscount = 0.0;
 
                 if (discount.getCategoryType() == DiscountCategoryType.FIXED) {
 
@@ -74,8 +74,8 @@ public class PricingEventService {
             }
         }
 
-        long finalAmount = mrp - maxDiscount;
-        if (finalAmount < 0) finalAmount = 0;
+        Double finalAmount = mrp - maxDiscount;
+        if (finalAmount < 0) finalAmount = (double) 0;
 
         VariantPricingEvent event = new VariantPricingEvent();
 

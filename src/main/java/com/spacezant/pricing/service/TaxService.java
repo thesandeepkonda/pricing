@@ -5,7 +5,7 @@ import com.spacezant.pricing.dto.TaxResponseDTO;
 
 public interface TaxService {
 
-    Long calculateTax(String countryCode, Long price);
+    double calculateTax(String countryCode, Double price);
 
     TaxResponseDTO calculateTaxDetails(TaxRequestDTO request);
 }

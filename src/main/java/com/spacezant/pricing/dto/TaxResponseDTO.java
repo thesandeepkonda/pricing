@@ -8,13 +8,13 @@ import lombok.Data;
 @Builder
 public class TaxResponseDTO {
 
-    private Long price;
+    private Double price;
 
     private Long taxRate;
 
-    private Long taxAmount;
+    private Double taxAmount;
 
-    private Long finalPrice;
+    private Double finalPrice;
 
     private String taxType;
 }

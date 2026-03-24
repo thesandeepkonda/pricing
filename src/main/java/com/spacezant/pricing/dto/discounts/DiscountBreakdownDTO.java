@@ -9,7 +9,7 @@ public class DiscountBreakdownDTO {
 
     private String discountName;
 
-    private Long calculatedDiscount;
+    private Double calculatedDiscount;
 
     private String reason; // "BEST_MATCH", "LOW_PRIORITY", etc.
 }

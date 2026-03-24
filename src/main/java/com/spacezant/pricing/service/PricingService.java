@@ -22,19 +22,19 @@ public class PricingService {
                 .findByVariantVariantIdAndVariantCountryCode(variantId, countryCode)
                 .orElseThrow(() -> new RuntimeException("Pricing not found"));
 
-        Long basePrice = pricing.getBasePrice();
+        Double basePrice = pricing.getBasePrice();
 
         // ✅ FIXED
-        Long discount = discountService.getBestCategoryDiscount(
+        Double discount = discountService.getBestCategoryDiscount(
                 variantId,
                 basePrice
         );
 
         double afterDiscount = basePrice - discount;
 
-        Long taxAmountLong = taxService.calculateTax(
+        Double taxAmountLong = taxService.calculateTax(
                 countryCode,
-                Math.round(afterDiscount)
+                (double) Math.round(afterDiscount)
         );
 
         double tax = taxAmountLong.doubleValue();
@@ -49,7 +49,7 @@ public class PricingService {
                 .discount(discount)
                 .priceAfterDiscount(afterDiscount)
                 .tax(tax)
-                .finalPrice((long) finalPrice)
+                .finalPrice((Double) finalPrice)
                 .build();
     }
 }

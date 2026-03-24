@@ -58,7 +58,7 @@ public class CouponController {
             @RequestParam String couponCode,
             @RequestParam String userId,
             @RequestParam String orderId,
-            @RequestParam Long discountAmount) {
+            @RequestParam Double discountAmount) {
 
         Coupon coupon = couponService.getByCode(couponCode);
 

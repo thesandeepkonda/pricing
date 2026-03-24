@@ -7,5 +7,5 @@ public class TaxRequestDTO {
 
     private String countryCode;
 
-    private Long price;
+    private Double price;
 }

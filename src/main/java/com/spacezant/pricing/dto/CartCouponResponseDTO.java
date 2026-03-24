@@ -6,11 +6,11 @@ import java.util.List;
 @Data
 public class CartCouponResponseDTO {
 
-    private Long totalBasePrice;
+    private Double totalBasePrice;
 
-    private double totalDiscount;
+    private Double totalDiscount;
 
-    private double finalCartPrice;
+    private Double finalCartPrice;
 
     private List<CartItemPricingDTO> itemBreakdown;
 }

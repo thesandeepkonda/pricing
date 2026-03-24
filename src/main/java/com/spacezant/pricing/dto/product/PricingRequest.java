@@ -7,6 +7,6 @@ public class PricingRequest {
 
     private String countryCode;
     private String currency;
-    private Long basePrice;
+    private Double basePrice;
     private String status;
 }

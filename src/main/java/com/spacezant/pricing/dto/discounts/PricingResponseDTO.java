@@ -7,11 +7,11 @@ public class PricingResponseDTO {
 
     private Long variantId;
 
-    private Long originalPrice;
+    private Double originalPrice;
 
-    private Long discountAmount;
+    private Double discountAmount;
 
-    private Long finalPrice;
+    private Double finalPrice;
 
     private String appliedDiscountName;
 

@@ -87,9 +87,9 @@ public class ProductKafkaConsumer {
                 vc.setCurrency(pricingEvent.getCurrency());
 
                 vc.setBasePrice(
-                        pricingEvent.getMrp() != null
-                                ? pricingEvent.getMrp().longValue()
-                                : 0L
+                        (double) (pricingEvent.getMrp() != null
+                                                        ? pricingEvent.getMrp().longValue()
+                                                        : 0L)
                 );
 
                 vc.setExportAllowed(pricingEvent.getExpoAllowed());

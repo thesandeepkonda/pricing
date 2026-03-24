@@ -6,12 +6,12 @@ import lombok.Data;
 public class VariantDetailResponseDTO {
 
     private Long variantId;
-    private Long mrp;
+    private Double mrp;
 
     private String discountName;
-    private Long discountAmount;
+    private Double discountAmount;
 
-    private Long finalPrice;
+    private Double finalPrice;
     private String countryCode;
     private String currency;
 }

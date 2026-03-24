@@ -19,9 +19,9 @@ public class TaxController {
 
     // 🔹 Simple calculation
     @GetMapping("/calculate")
-    public Long calculateTax(
+    public double calculateTax(
             @RequestParam String countryCode,
-            @RequestParam Long price
+            @RequestParam Double price
     ) {
         return taxService.calculateTax(countryCode, price);
     }

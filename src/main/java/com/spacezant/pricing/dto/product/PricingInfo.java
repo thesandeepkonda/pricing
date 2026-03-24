@@ -10,9 +10,9 @@ public class PricingInfo {
     private String countryCode; // IN, US, DE
     private String currency; // INR, USD, EUR
 
-    private Long basePrice;
-    private double discount;
-    private Long finalPrice;
+    private Double basePrice;
+    private Double discount;
+    private Double finalPrice;
 
     private List<Long> discountId;
 

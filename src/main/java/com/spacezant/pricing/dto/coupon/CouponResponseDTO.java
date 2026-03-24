@@ -12,9 +12,9 @@ public class CouponResponseDTO {
     private String couponName;
     private String description;
     private String discountType;
-    private Long discountValue;
-    private Long maxDiscountAmount;
-    private Long minOrderAmount;
+    private Double discountValue;
+    private Double maxDiscountAmount;
+    private Double minOrderAmount;
     private String currencyCode;
     private LocalDate startDate;
     private LocalDate endDate;

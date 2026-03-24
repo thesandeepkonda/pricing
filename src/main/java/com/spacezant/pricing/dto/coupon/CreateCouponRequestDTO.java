@@ -11,9 +11,9 @@ public class CreateCouponRequestDTO {
     private String description;
     private String category;
     private String discountType; // "PERCENTAGE" or "FIXED"
-    private Long discountValue;
-    private Long maxDiscountAmount;
-    private Long minOrderAmount;
+    private Double discountValue;
+    private Double maxDiscountAmount;
+    private Double minOrderAmount;
     private String currencyCode;
     private LocalDate startDate;
     private LocalDate endDate;

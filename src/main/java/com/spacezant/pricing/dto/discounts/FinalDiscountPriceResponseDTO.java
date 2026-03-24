@@ -7,13 +7,13 @@ public class FinalDiscountPriceResponseDTO {
 
     private Long variantId;
 
-    private Long basePrice;
+    private Double basePrice;
 
     private String discountType;
 
-    private Long discountValue;
+    private Double discountValue;
 
-    private Long finalPrice;
+    private Double finalPrice;
 
     private String currency;
 }

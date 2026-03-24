@@ -18,7 +18,7 @@ public class CouponUsage {
 
     private String orderId;
 
-    private Long discountAmount;
+    private Double discountAmount;
 
     private LocalDateTime usedAt;
 

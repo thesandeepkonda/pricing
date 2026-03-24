@@ -19,7 +19,7 @@ public class VariantCountry {
 
     private String HSNno;
 
-    private Long basePrice;
+    private Double basePrice;
 
     private String currency;
 

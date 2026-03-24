@@ -42,7 +42,7 @@ public class TaxAdminService {
         return TaxRuleResponse.builder()
                 .id(saved.getId())
                 .countryCode(saved.getCountryCode())
-                .taxRate(saved.getTaxRate())
+                .taxRate(Double.valueOf(saved.getTaxRate()))
                 .taxType(saved.getTaxType())
                 .isActive(saved.getIsActive())
                 .build();

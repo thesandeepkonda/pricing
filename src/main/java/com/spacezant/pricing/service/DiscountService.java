@@ -30,7 +30,7 @@ public class DiscountService {
 
         discount.setDiscountName(dto.getDiscountName());
         discount.setCategoryType(DiscountCategoryType.valueOf(dto.getCategoryType()));
-        discount.setDiscountValue(dto.getDiscountValue());
+        discount.setDiscountValue(Double.valueOf(dto.getDiscountValue()));
         discount.setMaxDiscount(dto.getMaxDiscount());
         discount.setDescription(dto.getDescription());
         discount.setActive(dto.getActive());
@@ -77,7 +77,7 @@ public class DiscountService {
                 .orElseThrow(() -> new RuntimeException("Not found"));
 
         discount.setDiscountName(dto.getDiscountName());
-        discount.setDiscountValue(dto.getDiscountValue());
+        discount.setDiscountValue(Double.valueOf(dto.getDiscountValue()));
         discount.setMaxDiscount(dto.getMaxDiscount());
         discount.setMinOrderAmount(dto.getMinOrderAmount());
         discount.setIsStackable(dto.getIsStackable());
@@ -98,18 +98,18 @@ public class DiscountService {
     /**
      * 🔥 MAIN DISCOUNT ENGINE (USE THIS EVERYWHERE)
      */
-    public long calculateBestDiscount(Long categoryId, long price, int quantity) {
+    public Double calculateBestDiscount(Long categoryId, Double price, int quantity) {
 
         List<Discount> discounts = discountRepository.findByCategoryCategoryId(categoryId);
 
         if (discounts == null || discounts.isEmpty()) {
-            return 0;
+            return (double) 0;
         }
 
         // Optional: priority sorting
         discounts.sort(Comparator.comparing(Discount::getPriority, Comparator.nullsLast(Integer::compareTo)));
 
-        long maxDiscount = 0;
+        Double maxDiscount = (double) 0;
         LocalDateTime now = LocalDateTime.now();
 
         for (Discount d : discounts) {
@@ -121,7 +121,7 @@ public class DiscountService {
             if (d.getStartDate() != null && d.getStartDate().isAfter(now)) continue;
             if (d.getEndDate() != null && d.getEndDate().isBefore(now)) continue;
 
-            long discountAmount = 0;
+            Double discountAmount = (double) 0;
 
             switch (d.getCategoryType()) {
 
@@ -174,13 +174,14 @@ public class DiscountService {
     /**
      * 🔹 For product-based calls (your current design)
      */
-    public Long getBestCategoryDiscount(Long productId, Long price) {
+    public Double getBestCategoryDiscount(Long productId, Double price) {
         return calculateBestDiscount(productId, price, 1);
     }
 
     // ================= MAPPER =================
 
     private DiscountResponseDTO mapToResponse(Discount d) {
+
         DiscountResponseDTO dto = new DiscountResponseDTO();
 
         dto.setDiscountId(d.getDiscountId());
@@ -188,35 +189,40 @@ public class DiscountService {
         dto.setCategoryType(d.getCategoryType().name());
         dto.setDiscountValue(d.getDiscountValue());
         dto.setMaxDiscount(d.getMaxDiscount());
+
+        dto.setMinOrderAmount(
+                d.getMinOrderAmount() != null ? d.getMinOrderAmount() : 0L
+        );
+
         dto.setDescription(d.getDescription());
         dto.setActive(d.getActive());
         dto.setPriority(d.getPriority());
         dto.setStartDate(d.getStartDate());
         dto.setEndDate(d.getEndDate());
-        dto.setMaxDiscount(d.getMinOrderAmount());
 
         return dto;
     }
 
-    public Long getBestCategoryDiscountByProduct(Long productId, Long basePrice) {
+
+    public Double getBestCategoryDiscountByProduct(Long productId, Double basePrice) {
 
         Long categoryId = productId; // your current design
 
         List<Discount> discounts =
                 discountRepository.findByCategoryCategoryIdAndActiveTrue(categoryId);
-        if (productId == null || basePrice == null) return 0L;
+        if (productId == null || basePrice == null) return (double) 0L;
 
 
-        long bestDiscount = 0;
+        Double bestDiscount = (double) 0;
 
         for (Discount discount : discounts) {
 
-            long calculatedDiscount = 0;
+            Double calculatedDiscount = (double) 0;
 
             // ✅ ENUM FIX
             if (discount.getCategoryType() == DiscountCategoryType.PERCENTAGE) {
 
-                calculatedDiscount = (basePrice * discount.getDiscountValue()) / 100;
+                calculatedDiscount = (Double) ((basePrice * discount.getDiscountValue()) / 100);
 
                 if (discount.getMaxDiscount() != null &&
                         calculatedDiscount > discount.getMaxDiscount()) {

@@ -11,8 +11,8 @@ public class PricingEvent {
     private String countryCode;
     private String currency;
    // private Long basePrice;
-    private Long mrp;
-    private double discount;
+    private Double mrp;
+    private Double discount;
     private Double finalPrice;
 
     //private List<Long> discountId;

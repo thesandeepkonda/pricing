@@ -161,7 +161,7 @@ public class CouponService {
     public void recordUsage(Coupon coupon,
                             String userId,
                             String orderId,
-                            Long discountAmount) {
+                            Double discountAmount) {
 
         CouponUsage usage = new CouponUsage();
         usage.setUsageId(UUID.randomUUID().toString());
@@ -202,7 +202,7 @@ public class CouponService {
 
         // ✅ Response
         CartCouponResponseDTO response = new CartCouponResponseDTO();
-        response.setTotalBasePrice(total);
+        response.setTotalBasePrice((double) total);
         response.setTotalDiscount(discount);
         response.setFinalCartPrice(finalPrice);
         response.setItemBreakdown(items);
@@ -239,22 +239,22 @@ public class CouponService {
                 throw new RuntimeException("Product not found: " + item.getVarientId());
             }
 
-            long unitPrice = (long) product.getPrice();
+            Double unitPrice = (Double) product.getPrice();
             Long categoryId = product.getCategoryId();
 
             int quantity = item.getQuantity();
 
             // ✅ FIXED: use correct method
-            long discountPerUnit = discountService.calculateBestDiscount(
+            Double discountPerUnit = (double) discountService.calculateBestDiscount(
                     categoryId,
                     unitPrice,
                     quantity
             );
 
-            long totalItemBase = unitPrice * quantity;
-            long totalItemDiscount = discountPerUnit * quantity;
+            Double totalItemBase =(unitPrice * quantity);
+            Double totalItemDiscount = discountPerUnit * quantity;
 
-            long totalItemPrice = totalItemBase - totalItemDiscount;
+            Double totalItemPrice = totalItemBase - totalItemDiscount;
 
             totalBasePrice += totalItemBase;
             totalDiscount += totalItemDiscount;
@@ -268,15 +268,15 @@ public class CouponService {
             breakdown.add(dto);
         }
 
-        long subtotal = totalBasePrice - totalDiscount;
+        Double subtotal = (double) (totalBasePrice - totalDiscount);
 
         // 4. Apply coupon
-        long couponDiscount = applyCoupon(request.getCouponCode(), subtotal);
+        Double couponDiscount = applyCoupon(request.getCouponCode(), subtotal);
 
-        long finalPrice = subtotal - couponDiscount;
+        Double finalPrice = subtotal - couponDiscount;
 
         return buildFinalResponse(
-                totalBasePrice,
+                (double) totalBasePrice,
                 totalDiscount + couponDiscount,
                 breakdown,
                 finalPrice
@@ -285,29 +285,29 @@ public class CouponService {
 
     // ================= COUPON =================
 
-    public long applyCoupon(String code, long currentTotal) {
+    public Double applyCoupon(String code, Double currentTotal) {
 
-        if (code == null || code.isBlank()) return 0;
+        if (code == null || code.isBlank()) return (double) 0;
 
         Coupon c = couponRepository.findByCouponCode(code.toUpperCase())
                 .orElseThrow(() -> new RuntimeException("Invalid coupon"));
 
-        if (!"ACTIVE".equalsIgnoreCase(c.getStatus())) return 0;
+        if (!"ACTIVE".equalsIgnoreCase(c.getStatus())) return (double) 0;
 
         if (c.getEndDate() != null && c.getEndDate().isBefore(LocalDate.now()))
-            return 0;
+            return (double) 0;
 
         if (c.getMinOrderAmount() != null &&
                 currentTotal < c.getMinOrderAmount())
-            return 0;
+            return (double) 0;
 
         Integer totalUsed = c.getTotalUsed() != null ? c.getTotalUsed() : 0;
 
         if (c.getUsageLimit() != null &&
                 totalUsed >= c.getUsageLimit())
-            return 0;
+            return (double) 0;
 
-        long discount;
+        Double discount;
 
         if ("PERCENTAGE".equalsIgnoreCase(c.getDiscountType())) {
 
@@ -328,10 +328,10 @@ public class CouponService {
     // ================= RESPONSE =================
 
     private CartCouponResponseDTO buildFinalResponse(
-            long base,
-            long discount,
+            Double base,
+            Double discount,
             List<CartItemPricingDTO> items,
-            long finalPrice) {
+            Double finalPrice) {
 
         CartCouponResponseDTO response = new CartCouponResponseDTO();
 

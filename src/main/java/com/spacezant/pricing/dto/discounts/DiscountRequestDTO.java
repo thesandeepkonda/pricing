@@ -12,7 +12,7 @@ public class DiscountRequestDTO {
     private String categoryType; // ENUM as String (PERCENTAGE, FIXED...)
 
     private Long discountValue;
-    private Long maxDiscount;
+    private Double maxDiscount;
 
     private String description;
 

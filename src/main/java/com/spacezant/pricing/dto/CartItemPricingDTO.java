@@ -7,7 +7,7 @@ public class CartItemPricingDTO {
 
     private Long varientId;
 
-    private double unitPrice;
+    private Double unitPrice;
 
     private int quantity;
 

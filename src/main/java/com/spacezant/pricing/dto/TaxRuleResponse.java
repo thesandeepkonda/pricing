@@ -11,7 +11,7 @@ public class TaxRuleResponse {
 
     private String countryCode;
 
-    private Long taxRate;
+    private Double taxRate;
 
     private String taxType;
 

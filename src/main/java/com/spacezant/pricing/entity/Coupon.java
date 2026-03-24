@@ -26,13 +26,13 @@ public class Coupon {
 
     private String discountType; // FIXED or PERCENTAGE
 
-    private Long discountValue;
+    private Double discountValue;
 
-    private Long maxDiscountAmount;
+    private Double maxDiscountAmount;
 
     private String currencyCode;
 
-    private Long minOrderAmount;
+    private Double minOrderAmount;
 
     private LocalDate startDate;
 
@@ -55,4 +55,5 @@ public class Coupon {
 
     @OneToMany(mappedBy = "coupon", cascade = CascadeType.ALL)
     private List<CouponUsage> usages;
+
 }
