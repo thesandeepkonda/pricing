@@ -30,7 +30,7 @@ public class TaxAdminService {
 
         TaxRule taxRule = TaxRule.builder()
                 .countryCode(request.getCountryCode())
-                .taxRate(request.getTaxRate())
+                .taxRate(Double.valueOf(request.getTaxRate()))
                 .taxType(request.getTaxType())
                 .isActive(request.getIsActive())
                 .createdAt(LocalDateTime.now())

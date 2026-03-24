@@ -294,7 +294,7 @@ public class VariantDiscountService {
                 info.setCountryCode(countryCode);
                 info.setCurrency(vc.getCurrency());
 
-                info.setBasePrice(basePrice.doubleValue());
+                info.setBasePrice(basePrice);
                 info.setDiscount((double) maxDiscount);
                 info.setFinalPrice((double) finalPrice);
 
@@ -305,9 +305,6 @@ public class VariantDiscountService {
 
                 info.setActive("ACTIVE".equalsIgnoreCase(vc.getStatus()));
 
-                // optional range
-                info.setStartFrom(0);
-                info.setEndTo((long) finalPrice);
 
                 response.put(variantId, info);
 

@@ -2,6 +2,7 @@ package com.spacezant.pricing.dto.product;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -19,8 +20,9 @@ public class PricingInfo {
     private Boolean expoAllowed;
     private Boolean impoAllowed;
 
-    private long startFrom;
-    private long endTo;
+    private LocalDateTime startFrom;
+    private LocalDateTime endTo;
 
     private boolean active;
+
 }

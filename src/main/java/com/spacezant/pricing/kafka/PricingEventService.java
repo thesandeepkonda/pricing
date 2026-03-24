@@ -20,7 +20,7 @@ import java.util.Optional;
 public class PricingEventService {
 
     private final DiscountRepository discountRepository;
-    private final PricingKafkaProducer pricingKafkaProducer;
+   // private final PricingKafkaProducer pricingKafkaProducer;
 
     public void processAndSendPricing(Long variantId, PricingEvent pricingEvent) {
 
@@ -89,7 +89,7 @@ public class PricingEventService {
         // 👉 Optional (VERY USEFUL)
         event.setDiscountName(discountName);
 
-        pricingKafkaProducer.sendPricing(event);
+      //  pricingKafkaProducer.sendPricing(event);
 
         log.info("✅ Pricing event sent: {}", event);
     }

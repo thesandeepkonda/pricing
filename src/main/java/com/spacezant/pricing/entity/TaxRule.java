@@ -3,7 +3,6 @@ package com.spacezant.pricing.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -23,13 +22,18 @@ public class TaxRule {
     private String countryCode;
 
     @Column(nullable = false)
-    private Long taxRate;   // 18 = 18%
+    private Double taxRate;   // 18 = 18%
 
     private String taxType; // GST / VAT
 
     private Boolean isActive;
+    private  Long zipcode;
+
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
 }
+
+

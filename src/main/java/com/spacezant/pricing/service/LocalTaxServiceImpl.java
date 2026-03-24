@@ -21,7 +21,7 @@ public class LocalTaxServiceImpl implements TaxService {
                 .findByCountry(countryCode)
                 .orElseThrow(() -> new RuntimeException("Tax rule not found"));
 
-        Long taxRate = taxRule.getTaxRate(); // 18
+        Double taxRate = taxRule.getTaxRate(); // 18
 
         return (price * taxRate) / 100;
     }
@@ -33,15 +33,15 @@ public class LocalTaxServiceImpl implements TaxService {
                 .findByCountry(request.getCountryCode())
                 .orElseThrow(() -> new RuntimeException("Tax rule not found"));
 
-        Double price = request.getPrice();
-        Long taxRate = taxRule.getTaxRate();
+        double price = request.getPrice();      // assuming getter returns Double → auto-unboxing
+        double taxRate = taxRule.getTaxRate();  // same here
 
-        Double taxAmount = (price * taxRate) / 100;
-        Double finalPrice = price + taxAmount;
+        double taxAmount = (price * taxRate) / 100;
+        double finalPrice = price + taxAmount;
 
         return TaxResponseDTO.builder()
                 .price(price)
-                .taxRate(taxRate)
+                .taxRate((long) taxRate)
                 .taxAmount(taxAmount)
                 .finalPrice(finalPrice)
                 .taxType(taxRule.getTaxType())
