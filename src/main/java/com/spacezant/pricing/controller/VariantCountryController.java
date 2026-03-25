@@ -28,16 +28,6 @@ public class VariantCountryController {
                 variantCountryService.createProductResponse(request)
         );
     }
-    // ✅ 1. GET FINAL PRICE (discount + tax)
-//    @GetMapping("/final-price")
-//    public ResponseEntity<FinalDiscountPriceResponseDTO> getFinalPrice(
-//            @RequestParam Long variantId,
-//            @RequestParam Long countryId) {
-//
-//        return ResponseEntity.ok(
-//                discountService.getFinalPrice(variantId, countrycode)
-//        );
-//    }
 
     // ✅ 2. GET FULL PRICING DETAILS
     @GetMapping("/{variantId}")

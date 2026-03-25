@@ -179,109 +179,7 @@ public class CouponService {
     }
 
 
-    public CartCouponResponseDTO applyCoupon(String couponCode,
-                                             String userId,
-                                             List<CartItemPricingDTO> items) {
 
-        // ✅ Calculate total cart price
-        long total = items.stream()
-                .mapToLong(i -> (long) (i.getUnitPrice() * i.getQuantity()))
-                .sum();
-
-        // ✅ Get coupon
-        Coupon coupon = getByCode(couponCode);
-
-        // ✅ Validate
-        validate(coupon, userId, total);
-
-        // ✅ Calculate discount
-        double discount = calculateDiscount(coupon, total);
-
-        // ✅ Final price
-        double finalPrice = total - discount;
-
-        // ✅ Response
-        CartCouponResponseDTO response = new CartCouponResponseDTO();
-        response.setTotalBasePrice((double) total);
-        response.setTotalDiscount(discount);
-        response.setFinalCartPrice(finalPrice);
-        response.setItemBreakdown(items);
-
-        return response;
-    }
-
-
-    public CartCouponResponseDTO calculatePrice(CartCouponRequest request) {
-
-        // 1. Collect variantIds
-        List<Long> variantIds = request.getItems()
-                .stream()
-                .map(CartItemDTO::getVarientId)
-                .toList();
-
-        // 2. Fetch product data
-        List<ProductPriceDTO> priceList = productClient.getPrices(variantIds);
-
-        Map<Long, ProductPriceDTO> productMap = priceList.stream()
-                .collect(Collectors.toMap(ProductPriceDTO::getVarientId, p -> p));
-
-        long totalBasePrice = 0;
-        long totalDiscount = 0;
-
-        List<CartItemPricingDTO> breakdown = new ArrayList<>();
-
-        // 3. Loop items
-        for (CartItemDTO item : request.getItems()) {
-
-            ProductPriceDTO product = productMap.get(item.getVarientId());
-
-            if (product == null) {
-                throw new RuntimeException("Product not found: " + item.getVarientId());
-            }
-
-            Double unitPrice = (Double) product.getPrice();
-            Long categoryId = product.getCategoryId();
-
-            int quantity = item.getQuantity();
-
-            // ✅ FIXED: use correct method
-            Double discountPerUnit = (double) discountService.calculateBestDiscount(
-                    categoryId,
-                    unitPrice,
-                    quantity
-            );
-
-            Double totalItemBase =(unitPrice * quantity);
-            Double totalItemDiscount = discountPerUnit * quantity;
-
-            Double totalItemPrice = totalItemBase - totalItemDiscount;
-
-            totalBasePrice += totalItemBase;
-            totalDiscount += totalItemDiscount;
-
-            CartItemPricingDTO dto = new CartItemPricingDTO();
-            dto.setVarientId(item.getVarientId());
-            dto.setUnitPrice(unitPrice);
-            dto.setQuantity(quantity);
-            dto.setTotalItemPrice(totalItemPrice);
-
-            breakdown.add(dto);
-        }
-
-        Double subtotal = (double) (totalBasePrice - totalDiscount);
-
-        // 4. Apply coupon
-        Double couponDiscount = applyCoupon(request.getCouponCode(), subtotal);
-
-        Double finalPrice = subtotal - couponDiscount;
-
-        return buildFinalResponse(
-                (double) totalBasePrice,
-                totalDiscount + couponDiscount,
-                breakdown,
-                finalPrice
-        );
-    }
 
     // ================= COUPON =================
 
@@ -325,21 +223,5 @@ public class CouponService {
         return discount;
     }
 
-    // ================= RESPONSE =================
 
-    private CartCouponResponseDTO buildFinalResponse(
-            Double base,
-            Double discount,
-            List<CartItemPricingDTO> items,
-            Double finalPrice) {
-
-        CartCouponResponseDTO response = new CartCouponResponseDTO();
-
-        response.setTotalBasePrice(base);
-        response.setTotalDiscount(discount);
-        response.setFinalCartPrice(Math.max(0, finalPrice));
-        response.setItemBreakdown(items);
-
-        return response;
-    }
 }
