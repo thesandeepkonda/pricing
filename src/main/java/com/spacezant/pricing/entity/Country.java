@@ -22,6 +22,7 @@ public class Country {
 
     private String currencyCode;
 
+
     private String status;
 
     private LocalDateTime createdAt;
@@ -36,4 +37,9 @@ public class Country {
 
     @OneToMany(mappedBy = "country")
     private List<CountryDiscount> countryDiscounts;
+
+    // 🔗 Country → TaxClassifications (NEW ✅)
+    @OneToMany(mappedBy = "country", fetch = FetchType.LAZY)
+    private List<TaxClassification> taxClassifications;
+
 }

@@ -39,5 +39,6 @@ public class CountryDiscount {
     // 🔥 FIXED: mappedBy must match field name in VariantDiscount
     @OneToMany(mappedBy = "countryDiscount", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<VariantDiscount> variantDiscounts;
+
 }
 

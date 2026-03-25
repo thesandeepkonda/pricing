@@ -29,6 +29,9 @@ public class Variant {
 
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "variant")
-    private List<VariantCountry> variantCountries;
+
+    // 🔗 Tax mapping (VERY IMPORTANT)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tax_classification_id")
+    private TaxClassification taxClassification;
 }

@@ -22,7 +22,7 @@ public enum DiscountCategoryType {
 
     // Logistics
     FREE_SHIPPING,
-    FREE_GIFT;
+    FREE_GIFT, FLAT;
 
 }
 

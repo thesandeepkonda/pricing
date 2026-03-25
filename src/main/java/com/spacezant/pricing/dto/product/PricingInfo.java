@@ -20,6 +20,8 @@ public class PricingInfo {
     private Boolean expoAllowed;
     private Boolean impoAllowed;
 
+    private Long Tax_classificationId; //tax_classification_id
+
     private LocalDateTime startFrom;
     private LocalDateTime endTo;
 

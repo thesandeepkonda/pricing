@@ -14,7 +14,7 @@ public class PricingEvent {
     private Double mrp;
     private Double discount;
     private Double finalPrice;
-
+    private Long taxClassificationId;
     //private List<Long> discountId;
     private List<Long> discountIds;
 

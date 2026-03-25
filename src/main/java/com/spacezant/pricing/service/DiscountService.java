@@ -1,18 +1,23 @@
 package com.spacezant.pricing.service;
 
 import com.spacezant.pricing.dto.discounts.*;
+import com.spacezant.pricing.dto.tax.DiscountResult;
+import com.spacezant.pricing.entity.CountryDiscount;
 import com.spacezant.pricing.entity.Discount;
 import com.spacezant.pricing.entity.DiscountCategory;
+import com.spacezant.pricing.entity.VariantDiscount;
 import com.spacezant.pricing.enums.DiscountCategoryType;
 import com.spacezant.pricing.repository.DiscountCategoryRepository;
 import com.spacezant.pricing.repository.DiscountRepository;
 import com.spacezant.pricing.repository.VariantCountryRepository;
+import com.spacezant.pricing.repository.VariantDiscountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +26,7 @@ public class DiscountService {
     private final DiscountRepository discountRepository;
     private final DiscountCategoryRepository categoryRepository;
     private final VariantCountryRepository variantCountryRepository;
+    private final VariantDiscountRepository variantDiscountRepository;
 
     // ================= CREATE =================
 
@@ -240,5 +246,62 @@ public class DiscountService {
         }
 
         return bestDiscount;
+    }
+
+    public DiscountResult calculateDiscount(Long variantId, String countryCode, Double totalPrice) {
+
+        // ✅ Safety check
+        if (variantId == null || totalPrice == null || countryCode == null) {
+            return DiscountResult.builder()
+                    .discountName("NO_DISCOUNT")
+                    .discountAmount(0.0)
+                    .build();
+        }
+
+        // ✅ Fetch discount (ONLY ONE QUERY)
+        VariantDiscount vd = variantDiscountRepository
+                .findActiveDiscount(variantId, countryCode)
+                .orElse(null);
+
+        // ✅ Validate
+        if (vd == null || vd.getCountryDiscount() == null) {
+            return DiscountResult.builder()
+                    .discountName("NO_DISCOUNT")
+                    .discountAmount(0.0)
+                    .build();
+        }
+
+        // 🔥 Get Discount entity
+        Discount discount = vd.getCountryDiscount().getDiscount();
+
+        if (discount == null || !Boolean.TRUE.equals(discount.getActive())) {
+            return DiscountResult.builder()
+                    .discountName("NO_DISCOUNT")
+                    .discountAmount(0.0)
+                    .build();
+        }
+
+        double discountAmount = 0;
+
+        // ✅ Apply logic
+        if (discount.getCategoryType() == DiscountCategoryType.PERCENTAGE) {
+
+            discountAmount = (totalPrice * discount.getDiscountValue()) / 100;
+
+            if (discount.getMaxDiscount() != null) {
+                discountAmount = Math.min(discountAmount, discount.getMaxDiscount());
+            }
+
+        } else if (discount.getCategoryType() == DiscountCategoryType.FLAT
+                || discount.getCategoryType() == DiscountCategoryType.FIXED) {
+
+            discountAmount = discount.getDiscountValue();
+        }
+
+        // ✅ Final response
+        return DiscountResult.builder()
+                .discountName(discount.getDiscountName())
+                .discountAmount(discountAmount)
+                .build();
     }
 }

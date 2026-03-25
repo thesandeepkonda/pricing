@@ -9,10 +9,17 @@ import java.util.Optional;
 @Repository
 public interface VariantCountryRepository extends JpaRepository<VariantCountry, Long> {
 
-    Optional<VariantCountry> findByVariantVariantIdAndVariantCountryCode(
-            Long variantId, String variantCountryCode);
-
     Optional<VariantCountry> findByVariantVariantIdAndCountryCountryCode(Long variantId, String countryCode);
+
+    Optional<VariantCountry> findByVariantVariantIdAndVariantCountryCode(
+            Long variantId,
+            String countryCode
+    );
+    Optional<VariantCountry> findByVariantVariantIdAndVariantCountryCodeAndStatus(
+            Long variantId,
+            String variantCountryCode,
+            String status
+    );
 
 
 }

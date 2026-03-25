@@ -10,5 +10,7 @@ public class VariantEvent {
     private String variantName;
     private String skuId;
     private Boolean status;
+    private Long taxClassificationId;
     private List<PricingEvent> pricing;
+
 }

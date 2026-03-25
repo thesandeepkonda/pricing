@@ -7,3 +7,4 @@ public enum TaxComponentType {
     VAT,
     SALES_TAX
 }
+

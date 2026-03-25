@@ -47,5 +47,4 @@ public class VariantCountry {
     @OneToMany(mappedBy = "variantCountry")
     private List<VariantDiscount> variantDiscounts;
 
-
 }
