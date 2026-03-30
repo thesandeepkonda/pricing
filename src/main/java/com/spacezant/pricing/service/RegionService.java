@@ -23,6 +23,10 @@ public class RegionService {
 
         Country country = countryRepository.findById(request.getCountryId())
                 .orElseThrow(() -> new RuntimeException("Country not found"));
+        if (regionRepository.findByRegionCodeAndCountryCountryId(
+                request.getRegionCode(), request.getCountryId()).isPresent()) {
+            throw new RuntimeException("Region code already exists for this country");
+        }
 
         Region region = new Region();
         region.setCountry(country);
@@ -30,9 +34,12 @@ public class RegionService {
         region.setRegionCode(request.getRegionCode());
         region.setRegionType(request.getRegionType());
         region.setStatus(request.getStatus());
+
         region.setCreatedAt(LocalDateTime.now());
+        region.setUpdatedAt(LocalDateTime.now()); // ✅ FIX
 
         Region saved = regionRepository.save(region);
+
 
         RegionResponseDTO dto = new RegionResponseDTO();
         dto.setRegionId(saved.getRegionId());
@@ -49,7 +56,7 @@ public class RegionService {
         Country country = countryRepository.findById(countryId)
                 .orElseThrow(() -> new RuntimeException("Country not found"));
 
-        List<Region> regions = regionRepository.findByCountry(country);
+        List<Region> regions = regionRepository.findByCountryCountryId(countryId);
 
         return regions.stream().map(region -> {
             RegionResponseDTO dto = new RegionResponseDTO();
@@ -58,6 +65,7 @@ public class RegionService {
             dto.setRegionName(region.getRegionName());
             dto.setRegionCode(region.getRegionCode());
             dto.setRegionType(region.getRegionType());
+            region.setUpdatedAt(LocalDateTime.now());
             return dto;
         }).toList();
     }

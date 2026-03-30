@@ -19,26 +19,6 @@ public class VariantCountryController {
     private final VariantCountryService variantCountryService;
     private final VariantDiscountService discountService;
 
-    // ✅ 1. CREATE PRODUCT (NEW)
-    @PostMapping("/create")
-    public ResponseEntity<ProductCreateResponse> createProduct(
-            @RequestBody ProductCreateRequest request) {
-
-        return ResponseEntity.ok(
-                variantCountryService.createProductResponse(request)
-        );
-    }
-
-    // ✅ 2. GET FULL PRICING DETAILS
-    @GetMapping("/{variantId}")
-    public ResponseEntity<PricingDetailResponse> getPricingDetails(
-            @PathVariable Long variantId,
-            @RequestParam String countryCode) {
-
-        return ResponseEntity.ok(
-                variantCountryService.getPricingDetails(variantId, countryCode)
-        );
-    }
     @GetMapping("/variant-details")
     public ResponseEntity<VariantDetailResponseDTO> getVariantDetails(
             @RequestParam Long variantId,

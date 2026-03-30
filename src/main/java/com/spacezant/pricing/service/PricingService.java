@@ -43,13 +43,14 @@ public class PricingService {
         DiscountResult discountResult = discountService.calculateDiscount(
                 variant.getVariantId(),
                 request.getCountryCode(),
-                totalBase
+                totalBase,
+                qty
         );
 
         double productDiscount = discountResult.getDiscountAmount();
         double afterProductDiscount = totalBase - productDiscount;
 
-        // ✅ 4. COUPON DISCOUNT 🔥
+        // ✅ 4. COUPON
         double couponDiscount = couponService.applyCoupon(
                 request.getCouponCode(),
                 afterProductDiscount
@@ -57,8 +58,9 @@ public class PricingService {
 
         double afterCoupon = afterProductDiscount - couponDiscount;
 
-        // ✅ 5. TAX (on final discounted price)
+        // ✅ 5. TAX
         TaxRequestDTO taxRequest = new TaxRequestDTO();
+
         taxRequest.setTaxClassificationId(
                 variant.getTaxClassification().getId()
         );
@@ -66,9 +68,36 @@ public class PricingService {
         taxRequest.setRegionId(request.getRegionId());
         taxRequest.setPrice(afterCoupon);
 
+        // 🔥 IMPORTANT (US TAX)
+        taxRequest.setZipCode(request.getZipCode());
+        taxRequest.setCity(request.getCity());
+        taxRequest.setState(request.getState());
+        taxRequest.setAddressLine1(request.getAddressLine1());
+
         TaxResponseDTO taxResponse = taxService.calculateTaxDetails(taxRequest);
 
-        // ✅ 6. FINAL RESPONSE
+        // ✅ 6. PREPARE BREAKDOWN FIRST
+        List<TaxBreakdown> breakdown;
+
+        if (taxResponse.getComponents() != null) {
+            breakdown = taxResponse.getComponents().stream()
+                    .map(c -> TaxBreakdown.builder()
+                            .taxName(c.getComponentName())
+                            .percentage(c.getPercentage())
+                            .amount(c.getAmount())
+                            .build())
+                    .toList();
+        } else {
+            breakdown = List.of(
+                    TaxBreakdown.builder()
+                            .taxName("SALES_TAX")
+                            .percentage(taxResponse.getTotalTaxPercentage())
+                            .amount(taxResponse.getTaxAmount())
+                            .build()
+            );
+        }
+
+        // ✅ 7. FINAL RESPONSE (ONLY ONE RETURN)
         return PricingResponse.builder()
                 .variantId(variant.getVariantId())
 
@@ -76,30 +105,19 @@ public class PricingService {
                 .quantity(qty)
                 .totalBasePrice(totalBase)
 
-                // 🔥 Product Discount
                 .discountName(discountResult.getDiscountName())
                 .discountAmount(productDiscount)
 
-                // 🔥 Coupon
                 .couponCode(request.getCouponCode())
                 .couponDiscount(couponDiscount)
 
-                // 🔥 After all discounts
                 .priceAfterDiscount(afterCoupon)
 
-                // 🔥 Tax
                 .totalTaxAmount(taxResponse.getTaxAmount())
-                .taxBreakdown(taxResponse.getComponents().stream()
-                        .map(c -> TaxBreakdown.builder()
-                                .taxName(c.getComponentName())
-                                .percentage(c.getPercentage())
-                                .amount(c.getAmount())
-                                .build())
-                        .toList()
-                )
+                .taxBreakdown(breakdown)
 
-                // 🔥 FINAL
                 .finalPrice(taxResponse.getFinalPrice())
+
                 .build();
     }
     public PricingResponse calculatePriceWithoutCoupon(PricingRequest request) {
@@ -125,16 +143,14 @@ public class PricingService {
         DiscountResult discountResult = discountService.calculateDiscount(
                 variant.getVariantId(),
                 request.getCountryCode(),
-                totalBase
+                totalBase,
+                qty
         );
 
         double discountAmount = discountResult.getDiscountAmount();
         double priceAfterDiscount = totalBase - discountAmount;
 
-        // ❌ NO COUPON HERE
 
-        // ❌ NO FINAL TAX (cart will recalculate)
-        // but we keep initial tax (optional)
 
         TaxRequestDTO taxRequest = new TaxRequestDTO();
         taxRequest.setTaxClassificationId(
@@ -143,6 +159,7 @@ public class PricingService {
         taxRequest.setCountryCode(request.getCountryCode());
         taxRequest.setRegionId(request.getRegionId());
         taxRequest.setPrice(priceAfterDiscount);
+
 
         TaxResponseDTO taxResponse = taxService.calculateTaxDetails(taxRequest);
 

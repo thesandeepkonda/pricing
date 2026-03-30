@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-@Service
+@Service("localTaxService")
 @RequiredArgsConstructor
 public class LocalTaxServiceImpl implements TaxService {
 
@@ -25,6 +25,7 @@ public class LocalTaxServiceImpl implements TaxService {
     public double calculateTax(String countryCode, Double price) {
         return 0; // you can implement later
     }
+
 
     // ✅ MAIN METHOD (ONLY ONE)
     @Override

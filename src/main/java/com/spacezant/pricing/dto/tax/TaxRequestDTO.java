@@ -10,4 +10,9 @@ public class TaxRequestDTO {
     private Long regionId; // optional
     private Double price;
 
+    private String ZipCode;
+    private String city;
+    private String state;
+    private String addressLine1;
+
 }

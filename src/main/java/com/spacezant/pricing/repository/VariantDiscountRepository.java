@@ -1,7 +1,6 @@
 package com.spacezant.pricing.repository;
 
 import com.spacezant.pricing.entity.TaxRate;
-import com.spacezant.pricing.entity.VariantCountry;
 import com.spacezant.pricing.entity.VariantDiscount;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -48,7 +47,6 @@ public interface VariantDiscountRepository extends JpaRepository<VariantDiscount
             Long classificationId,
             String countryCode
     );
-
 
 
 }

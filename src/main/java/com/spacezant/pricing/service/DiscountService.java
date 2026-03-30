@@ -106,6 +106,7 @@ public class DiscountService {
      */
     public Double calculateBestDiscount(Long categoryId, Double price, int quantity) {
 
+
         List<Discount> discounts = discountRepository.findByCategoryCategoryId(categoryId);
 
         if (discounts == null || discounts.isEmpty()) {
@@ -152,10 +153,14 @@ public class DiscountService {
 
                 case BUY_X_GET_Y:
                     if (d.getMinQuantity() != null && quantity >= d.getMinQuantity()) {
-                        int freeItems = quantity / d.getMinQuantity();
+
+                        int groupSize = d.getMinQuantity() + 1; // X + 1 free
+                        int freeItems = quantity / groupSize;
+
                         discountAmount = freeItems * (price / quantity);
                     }
                     break;
+
 
                 case BUNDLE:
                     discountAmount = d.getDiscountValue();
@@ -173,6 +178,7 @@ public class DiscountService {
                 maxDiscount = discountAmount;
             }
         }
+
 
         return maxDiscount;
     }
@@ -248,9 +254,12 @@ public class DiscountService {
         return bestDiscount;
     }
 
-    public DiscountResult calculateDiscount(Long variantId, String countryCode, Double totalPrice) {
+    public DiscountResult calculateDiscount(Long variantId,
+                                            String countryCode,
+                                            Double totalPrice,
+                                            int quantity) {
 
-        // ✅ Safety check
+        // ✅ 1. Safety check
         if (variantId == null || totalPrice == null || countryCode == null) {
             return DiscountResult.builder()
                     .discountName("NO_DISCOUNT")
@@ -258,12 +267,12 @@ public class DiscountService {
                     .build();
         }
 
-        // ✅ Fetch discount (ONLY ONE QUERY)
+        // ✅ 2. Fetch discount
         VariantDiscount vd = variantDiscountRepository
                 .findActiveDiscount(variantId, countryCode)
                 .orElse(null);
 
-        // ✅ Validate
+        // ✅ 3. Validate VariantDiscount
         if (vd == null || vd.getCountryDiscount() == null) {
             return DiscountResult.builder()
                     .discountName("NO_DISCOUNT")
@@ -271,7 +280,7 @@ public class DiscountService {
                     .build();
         }
 
-        // 🔥 Get Discount entity
+        // ✅ 4. Get Discount entity
         Discount discount = vd.getCountryDiscount().getDiscount();
 
         if (discount == null || !Boolean.TRUE.equals(discount.getActive())) {
@@ -283,25 +292,47 @@ public class DiscountService {
 
         double discountAmount = 0;
 
-        // ✅ Apply logic
-        if (discount.getCategoryType() == DiscountCategoryType.PERCENTAGE) {
+        // ✅ 5. Apply logic
+        switch (discount.getCategoryType()) {
 
-            discountAmount = (totalPrice * discount.getDiscountValue()) / 100;
+            case PERCENTAGE:
+                discountAmount = (totalPrice * discount.getDiscountValue()) / 100;
 
-            if (discount.getMaxDiscount() != null) {
-                discountAmount = Math.min(discountAmount, discount.getMaxDiscount());
-            }
+                if (discount.getMaxDiscount() != null) {
+                    discountAmount = Math.min(discountAmount, discount.getMaxDiscount());
+                }
+                break;
 
-        } else if (discount.getCategoryType() == DiscountCategoryType.FLAT
-                || discount.getCategoryType() == DiscountCategoryType.FIXED) {
+            case FIXED:
+            case FLAT:
+                discountAmount = discount.getDiscountValue();
+                break;
 
-            discountAmount = discount.getDiscountValue();
+            case BULK:
+                boolean isMinQtyOk = discount.getMinQuantity() == null
+                        || quantity >= discount.getMinQuantity();
+
+                boolean isMinOrderOk = discount.getMinOrderAmount() == null
+                        || totalPrice >= discount.getMinOrderAmount();
+
+                if (isMinQtyOk && isMinOrderOk) {
+                    discountAmount = (totalPrice * discount.getDiscountValue()) / 100;
+
+                    if (discount.getMaxDiscount() != null) {
+                        discountAmount = Math.min(discountAmount, discount.getMaxDiscount());
+                    }
+                }
+                break;
+
+            default:
+                discountAmount = 0;
         }
 
-        // ✅ Final response
+        // ✅ 6. ALWAYS return (never null)
         return DiscountResult.builder()
                 .discountName(discount.getDiscountName())
                 .discountAmount(discountAmount)
                 .build();
     }
 }
+

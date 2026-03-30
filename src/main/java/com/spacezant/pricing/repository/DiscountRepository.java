@@ -14,4 +14,5 @@ public interface DiscountRepository extends JpaRepository<Discount, Long> {
     List<Discount> findByCategoryCategoryId(Long categoryId);
     List<Discount> findByCategoryCategoryIdAndActiveTrue(Long categoryId);
 
+
 }

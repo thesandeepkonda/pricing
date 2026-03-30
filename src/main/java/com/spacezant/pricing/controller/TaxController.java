@@ -35,4 +35,15 @@ public class TaxController {
         double tax = taxService.calculateTax(countryCode, price);
         return ResponseEntity.ok(tax);
     }
+
+    @PostMapping("/Localcalculate")
+    public TaxResponseDTO localCalculate(@RequestBody TaxRequestDTO request) {
+        return taxService.calculateTaxDetails(request);  // ✅ MUST RETURN
+    }
+
+    // ✅ SIMPLE TEST ENDPOINT
+    @GetMapping("/ping")
+    public String ping() {
+        return "Tax service is running 🚀";
+    }
 }

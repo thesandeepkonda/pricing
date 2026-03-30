@@ -10,12 +10,11 @@ public class PricingEvent {
 
     private String countryCode;
     private String currency;
-   // private Long basePrice;
-    private Double mrp;
+    private Double basePrice;
     private Double discount;
     private Double finalPrice;
     private Long taxClassificationId;
-    //private List<Long> discountId;
+
     private List<Long> discountIds;
 
     private Boolean expoAllowed;
@@ -24,8 +23,7 @@ public class PricingEvent {
     private LocalDateTime startFrom;
     private LocalDateTime endTo;
 
-    private boolean active;
-
+    private Boolean active;
 
 }
 

@@ -72,105 +72,108 @@ public class ProductKafkaConsumer {
             }
 
             // 🔥🔥🔥 ADD THIS BLOCK
-            if (variantEvent.getTaxClassificationId() != null) {
-
-                TaxClassification tax = taxClassificationRepository
-                        .findById(variantEvent.getTaxClassificationId())
-                        .orElseThrow(() -> new RuntimeException("Invalid Tax Classification"));
-
-                variant.setTaxClassification(tax); // ✅ THIS IS KEY
-            }
-
-// ✅ SAVE AFTER SETTING TAX
-            variantRepository.save(variant);
-
-            // ✅ PRICING LOOP
             for (PricingEvent pricingEvent : variantEvent.getPricing()) {
 
-                Optional<VariantCountry> existing =
-                        variantCountryRepository
-                                .findByVariantVariantIdAndVariantCountryCode(
-                                        variantId,
-                                        pricingEvent.getCountryCode()
-                                );
+                // 🔥 SET TAX FROM pricingEvent
+                if (pricingEvent.getTaxClassificationId() != null) {
 
-                VariantCountry vc = existing.orElse(new VariantCountry());
+                    TaxClassification tax = taxClassificationRepository
+                            .findById(pricingEvent.getTaxClassificationId())
+                            .orElseThrow(() -> new RuntimeException("Invalid Tax Classification"));
 
-                vc.setVariant(variant);
-                vc.setVariantCountryCode(pricingEvent.getCountryCode());
-                vc.setCurrency(pricingEvent.getCurrency());
+                    variant.setTaxClassification(tax); // ✅ FIX
+                }
 
-                vc.setBasePrice(
-                        pricingEvent.getMrp() != null
-                                ? pricingEvent.getMrp()
-                                : pricingEvent.getFinalPrice() != null
-                                ? pricingEvent.getFinalPrice()
-                                : 0.0
-                );
+                // ✅ SAVE AFTER SETTING TAX
+                variantRepository.save(variant);
 
-                vc.setExportAllowed(pricingEvent.getExpoAllowed());
-                vc.setImportAllowed(pricingEvent.getImpoAllowed());
+                // ✅ PRICING LOOP
+              //  for (PricingEvent pricingEvent : variantEvent.getPricing()) {
 
-                // ✅ HSN
-                if (event.getProductData().getProductInfo() != null) {
-                    vc.setHSNno(
-                            event.getProductData()
-                                    .getProductInfo()
-                                    .getHsCode()
+                    Optional<VariantCountry> existing =
+                            variantCountryRepository
+                                    .findByVariantVariantIdAndVariantCountryCode(
+                                            variantId,
+                                            pricingEvent.getCountryCode()
+                                    );
+
+                    VariantCountry vc = existing.orElse(new VariantCountry());
+
+                    vc.setVariant(variant);
+                    vc.setVariantCountryCode(pricingEvent.getCountryCode());
+                    vc.setCurrency(pricingEvent.getCurrency());
+
+                    vc.setBasePrice(
+                            pricingEvent.getBasePrice() != null
+                                    ? pricingEvent.getBasePrice()
+                                    : pricingEvent.getFinalPrice() != null
+                                    ? pricingEvent.getFinalPrice()
+                                    : 0.0
                     );
+
+                    vc.setExportAllowed(pricingEvent.getExpoAllowed());
+                    vc.setImportAllowed(pricingEvent.getImpoAllowed());
+
+                    // ✅ HSN
+                    if (event.getProductData().getProductInfo() != null) {
+                        vc.setHSNno(
+                                event.getProductData()
+                                        .getProductInfo()
+                                        .getHsCode()
+                        );
+                    }
+
+                    vc.setStatus("ACTIVE");
+                    vc.setUpdatedAt(LocalDateTime.now());
+
+                    if (vc.getCreatedAt() == null) {
+                        vc.setCreatedAt(LocalDateTime.now());
+                    }
+
+                    // 🔥🔥🔥 FIX #1 (MOST IMPORTANT)
+                    vc = variantCountryRepository.save(vc);
+                    //   pricingEventService.processAndSendPricing(variantId, pricingEvent);
+
+                    // 🔥 FIX #2: handle discount safely
+                    if (pricingEvent.getDiscountIds() == null ||
+                            pricingEvent.getDiscountIds().isEmpty()) {
+                        continue;
+                    }
+
+                    for (Long discountId : pricingEvent.getDiscountIds()) {
+
+                        if (discountId == null || discountId <= 0) continue;
+
+                        Optional<Discount> discountOpt = discountRepository.findById(discountId);
+                        if (discountOpt.isEmpty()) continue;
+
+                        Discount discount = discountOpt.get();
+
+                        Country country = countryRepository
+                                .findByCountryCode(pricingEvent.getCountryCode())
+                                .orElseThrow(() -> new RuntimeException("Country not found"));
+
+                        // ✅ SAVE CountryDiscount
+                        CountryDiscount cd = new CountryDiscount();
+                        cd.setCountry(country);
+                        cd.setDiscount(discount);
+                        cd.setStatus("ACTIVE");
+                        cd.setCreatedAt(LocalDateTime.now());
+
+                        cd = countryDiscountRepository.save(cd);
+
+                        // 🔥 NOW SAFE (vc already saved)
+                        VariantDiscount vd = new VariantDiscount();
+                        vd.setVariantCountry(vc);
+                        vd.setCountryDiscount(cd);
+                        vd.setStatus("ACTIVE");
+                        vd.setCreatedAt(LocalDateTime.now());
+
+                        variantDiscountRepository.save(vd);
+                    }
                 }
 
-                vc.setStatus("ACTIVE");
-                vc.setUpdatedAt(LocalDateTime.now());
 
-                if (vc.getCreatedAt() == null) {
-                    vc.setCreatedAt(LocalDateTime.now());
-                }
-
-                // 🔥🔥🔥 FIX #1 (MOST IMPORTANT)
-                vc = variantCountryRepository.save(vc);
-             //   pricingEventService.processAndSendPricing(variantId, pricingEvent);
-
-                // 🔥 FIX #2: handle discount safely
-                if (pricingEvent.getDiscountIds() == null ||
-                        pricingEvent.getDiscountIds().isEmpty()) {
-                    continue;
-                }
-
-                for (Long discountId : pricingEvent.getDiscountIds()) {
-
-                    if (discountId == null || discountId <= 0) continue;
-
-                    Optional<Discount> discountOpt = discountRepository.findById(discountId);
-                    if (discountOpt.isEmpty()) continue;
-
-                    Discount discount = discountOpt.get();
-
-                    Country country = countryRepository
-                            .findByCountryCode(pricingEvent.getCountryCode())
-                            .orElseThrow(() -> new RuntimeException("Country not found"));
-
-                    // ✅ SAVE CountryDiscount
-                    CountryDiscount cd = new CountryDiscount();
-                    cd.setCountry(country);
-                    cd.setDiscount(discount);
-                    cd.setStatus("ACTIVE");
-                    cd.setCreatedAt(LocalDateTime.now());
-
-                    cd = countryDiscountRepository.save(cd);
-
-                    // 🔥 NOW SAFE (vc already saved)
-                    VariantDiscount vd = new VariantDiscount();
-                    vd.setVariantCountry(vc);
-                    vd.setCountryDiscount(cd);
-                    vd.setStatus("ACTIVE");
-                    vd.setCreatedAt(LocalDateTime.now());
-
-                    variantDiscountRepository.save(vd);
-                }
             }
-
-
         }
     }
-}
