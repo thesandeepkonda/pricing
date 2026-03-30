@@ -7,6 +7,7 @@ import com.spacezant.pricing.dto.tax.PricingRequest;
 import com.spacezant.pricing.dto.tax.PricingResponse;
 import com.spacezant.pricing.dto.tax.TaxRequestDTO;
 import com.spacezant.pricing.dto.tax.TaxResponseDTO;
+import com.spacezant.pricing.entity.Variant;
 import com.spacezant.pricing.repository.VariantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,11 +28,10 @@ public class CartService {
 
         List<PricingResponse> itemResponses = new ArrayList<>();
 
-        double totalBase = 0;
+        double subtotal = 0;
         double totalDiscount = 0;
         double totalAfterDiscount = 0;
 
-        // ✅ 1. Calculate each item WITHOUT coupon
         for (CartItemRequest item : request.getItems()) {
 
             PricingRequest pricingRequest = new PricingRequest();
@@ -40,71 +40,69 @@ public class CartService {
             pricingRequest.setRegionId(item.getRegionId());
             pricingRequest.setQuantity(item.getQuantity());
 
-            // ❗ DO NOT pass coupon here
-            PricingResponse response = pricingService.calculatePriceWithoutCoupon(pricingRequest);
+            PricingResponse response =
+                    pricingService.calculatePriceWithoutCoupon(pricingRequest);
 
             itemResponses.add(response);
 
-            totalBase += response.getTotalBasePrice();
+            subtotal += response.getTotalBasePrice();
             totalDiscount += response.getDiscountAmount();
             totalAfterDiscount += response.getPriceAfterDiscount();
         }
 
-        // ✅ 2. Apply COUPON ON CART TOTAL
-        double couponDiscount = couponService.applyCoupon(
-                request.getCouponCode(),
-                totalAfterDiscount
-        );
+        double couponDiscount = 0;
+
+        if (request.getCouponCode() != null) {
+            couponDiscount = couponService.applyCoupon(
+                    request.getCouponCode(),
+                    totalAfterDiscount
+            );
+        }
 
         double afterCouponTotal = totalAfterDiscount - couponDiscount;
-
-        // ✅ 3. Recalculate TAX per item (proportional distribution)
 
         double totalTax = 0;
 
         for (int i = 0; i < itemResponses.size(); i++) {
 
             PricingResponse response = itemResponses.get(i);
-            CartItemRequest item = request.getItems().get(i); // ✅ ORIGINAL DATA
+            CartItemRequest item = request.getItems().get(i);
 
-            double ratio = response.getPriceAfterDiscount() / totalAfterDiscount;
+            double ratio = totalAfterDiscount > 0
+                    ? response.getPriceAfterDiscount() / totalAfterDiscount
+                    : 0;
 
             double itemPriceAfterCoupon =
                     response.getPriceAfterDiscount() - (couponDiscount * ratio);
 
-            // ✅ TAX REQUEST (use original item data)
+            Variant variant = variantRepository.findById(item.getVariantId())
+                    .orElseThrow(() -> new RuntimeException("Variant not found"));
+
             TaxRequestDTO taxRequest = new TaxRequestDTO();
             taxRequest.setTaxClassificationId(
-                    variantRepository.findById(item.getVariantId())
-                            .orElseThrow().getTaxClassification().getId()
+                    variant.getTaxClassification().getId()
             );
             taxRequest.setCountryCode(item.getCountryCode());
             taxRequest.setRegionId(item.getRegionId());
             taxRequest.setPrice(itemPriceAfterCoupon);
 
-            TaxResponseDTO taxResponse = taxService.calculateTaxDetails(taxRequest);
+            TaxResponseDTO taxResponse =
+                    taxService.calculateTaxDetails(taxRequest);
 
             response.setTotalTaxAmount(taxResponse.getTaxAmount());
             response.setFinalPrice(taxResponse.getFinalPrice());
 
             totalTax += taxResponse.getTaxAmount();
-
-           // TaxRequestDTO taxRequest = new TaxRequestDTO();
-            taxRequest.setTaxClassificationId(response.getTaxClassificationId());
-            taxRequest.setCountryCode(response.getCountryCode());
-            taxRequest.setRegionId(response.getRegionId());
-            taxRequest.setPrice(itemPriceAfterCoupon);
-
-         //   TaxResponseDTO taxResponse = taxService.calculateTaxDetails(taxRequest);
         }
-
 
         double grandTotal = afterCouponTotal + totalTax;
 
         return CartResponse.builder()
                 .items(itemResponses)
-                .totalBasePrice(totalBase)
+
+                .totalBasePrice(subtotal)
                 .totalProductDiscount(totalDiscount)
+
                 .couponDiscount(couponDiscount)
                 .totalTax(totalTax)
                 .grandTotal(grandTotal)
