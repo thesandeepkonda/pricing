@@ -2,7 +2,6 @@ package com.spacezant.pricing.dto.tax;
 
 import lombok.Builder;
 import lombok.Data;
-
 import java.util.List;
 
 @Data
@@ -14,5 +13,8 @@ public class TaxResponseDTO {
     private Double taxAmount;
     private Double finalPrice;
     private String taxType;
+
+    private Double importDuty; // ✅ ADD THIS
+
     private List<TaxComponentBreakdown> components;
 }

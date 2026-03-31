@@ -77,14 +77,25 @@ public class CartService {
 
             Variant variant = variantRepository.findById(item.getVariantId())
                     .orElseThrow(() -> new RuntimeException("Variant not found"));
+            variant.getTaxClassification().getId();
 
             TaxRequestDTO taxRequest = new TaxRequestDTO();
-            taxRequest.setTaxClassificationId(
-                    variant.getTaxClassification().getId()
-            );
-            taxRequest.setCountryCode(item.getCountryCode());
-            taxRequest.setRegionId(item.getRegionId());
+
             taxRequest.setPrice(itemPriceAfterCoupon);
+
+// 🔥 REQUIRED FIELDS (THIS FIXES YOUR ERROR)
+            taxRequest.setCountryCode(item.getCountryCode());
+            taxRequest.setRegionId(String.valueOf(item.getRegionId()));
+            //taxRequest.setZipCode(item.getzipCode()); // ✅ REQUIRED
+            taxRequest.setTaxClassificationId(
+                    String.valueOf(variant.getTaxClassification().getId())
+
+            );
+            taxRequest.setTaxClassificationId(
+                    String.valueOf(variant.getTaxClassification().getId())
+            );
+
+            taxRequest.setRegionId(String.valueOf(item.getRegionId()));
 
             TaxResponseDTO taxResponse =
                     taxService.calculateTaxDetails(taxRequest);

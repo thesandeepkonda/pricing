@@ -62,17 +62,17 @@ public class PricingService {
         TaxRequestDTO taxRequest = new TaxRequestDTO();
 
         taxRequest.setTaxClassificationId(
-                variant.getTaxClassification().getId()
+                String.valueOf(variant.getTaxClassification().getId())
         );
         taxRequest.setCountryCode(request.getCountryCode());
-        taxRequest.setRegionId(request.getRegionId());
+        taxRequest.setRegionId(String.valueOf(request.getRegionId()));
         taxRequest.setPrice(afterCoupon);
 
         // 🔥 IMPORTANT (US TAX)
         taxRequest.setZipCode(request.getZipCode());
         taxRequest.setCity(request.getCity());
         taxRequest.setState(request.getState());
-        taxRequest.setAddressLine1(request.getAddressLine1());
+        //taxRequest.setAddressLine(request.getAddressLine1());
 
         TaxResponseDTO taxResponse = taxService.calculateTaxDetails(taxRequest);
 
@@ -154,10 +154,10 @@ public class PricingService {
 
         TaxRequestDTO taxRequest = new TaxRequestDTO();
         taxRequest.setTaxClassificationId(
-                variant.getTaxClassification().getId()
+                String.valueOf(variant.getTaxClassification().getId())
         );
         taxRequest.setCountryCode(request.getCountryCode());
-        taxRequest.setRegionId(request.getRegionId());
+        taxRequest.setRegionId(String.valueOf(request.getRegionId()));
         taxRequest.setPrice(priceAfterDiscount);
 
 

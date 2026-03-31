@@ -10,34 +10,37 @@ import java.util.Optional;
 public interface TaxRateRepository extends JpaRepository<TaxRate, Long> {
 
     @Query("""
-SELECT tr FROM TaxRate tr
-WHERE tr.taxClassification.id = :classificationId
-AND tr.country.countryCode = :countryCode
-AND (tr.region.regionId = :regionId OR tr.region IS NULL)
-AND tr.status = 'ACTIVE'
-AND CURRENT_DATE BETWEEN tr.effectiveFrom
-AND COALESCE(tr.effectiveTo, CURRENT_DATE)
+SELECT t FROM TaxRate t
+WHERE t.taxClassification.id = :classificationId
+AND t.country.id = :countryId
+AND t.region.id = :regionId
+AND t.status = 'ACTIVE'
 """)
     Optional<TaxRate> findActiveTax(
-            Long classificationId,
-            String countryCode,
-            Long regionId
+            @Param("classificationId") Long classificationId,
+            @Param("countryId") Long countryId,
+            @Param("regionId") Long regionId
     );
+
     @Query("""
-    SELECT tr FROM TaxRate tr
-    LEFT JOIN FETCH tr.components c
-    WHERE tr.taxClassification.id = :classificationId
-      AND tr.country.countryCode = :countryCode
-      AND tr.region.regionId = :regionId
-      AND tr.status = 'ACTIVE'
+SELECT t FROM TaxRate t
+WHERE t.taxClassification.id = :classificationId
+AND t.country.id = :countryId
+AND t.region.id = :regionId
 """)
-    Optional<TaxRate> findRegionTax(Long classificationId, String countryCode, Long regionId);
+    Optional<TaxRate> findRegionTax(
+            @Param("classificationId") Long classificationId,
+            @Param("countryId") Long countryId,
+            @Param("regionId") Long regionId
+    );
+
     @Query("""
-    SELECT tr FROM TaxRate tr
-    LEFT JOIN FETCH tr.components c
-    WHERE tr.taxClassification.id = :classificationId
-      AND tr.country.countryCode = :countryCode
-      AND tr.status = 'ACTIVE'
+SELECT t FROM TaxRate t
+WHERE t.taxClassification.id = :classificationId
+AND t.country.id = :countryId
 """)
-    Optional<TaxRate> findAnyCountryTax(Long classificationId, String countryCode);
+    Optional<TaxRate> findAnyCountryTax(
+            @Param("classificationId") Long classificationId,
+            @Param("countryId") Long countryId
+    );
 }

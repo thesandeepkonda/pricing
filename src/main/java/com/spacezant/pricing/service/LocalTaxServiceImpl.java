@@ -2,88 +2,79 @@ package com.spacezant.pricing.service;
 
 import com.spacezant.pricing.dto.tax.TaxRequestDTO;
 import com.spacezant.pricing.dto.tax.TaxResponseDTO;
-import com.spacezant.pricing.dto.tax.TaxComponentBreakdown;
 import com.spacezant.pricing.entity.TaxRate;
 import com.spacezant.pricing.entity.TaxRateComponent;
 import com.spacezant.pricing.repository.TaxRateRepository;
+import com.spacezant.pricing.repository.CountryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service("localTaxService")
 @RequiredArgsConstructor
 public class LocalTaxServiceImpl implements TaxService {
 
     private final TaxRateRepository taxRateRepository;
+    private final CountryRepository countryRepository;
 
-
-    // ✅ SIMPLE TAX METHOD (optional)
+    // ✅ REQUIRED METHOD (fixes your error)
     @Override
     public double calculateTax(String countryCode, Double price) {
-        return 0; // you can implement later
+
+        TaxRequestDTO request = new TaxRequestDTO();
+        request.setCountryCode(countryCode);
+        request.setPrice(price);
+
+        TaxResponseDTO response = calculateTaxDetails(request);
+        return response.getTaxAmount();
     }
 
-
-    // ✅ MAIN METHOD (ONLY ONE)
     @Override
     @Transactional(readOnly = true)
     public TaxResponseDTO calculateTaxDetails(TaxRequestDTO request) {
 
-        // ✅ 1. Try REGION-specific tax
-        Optional<TaxRate> regionTax = taxRateRepository.findActiveTax(
-                request.getTaxClassificationId(),
-                request.getCountryCode(),
-                request.getRegionId()
+        Long classificationId = Long.valueOf(request.getTaxClassificationId());
+        Long regionId = Long.valueOf(request.getRegionId());
+
+        Long countryId = countryRepository
+                .findByCountryCode(request.getCountryCode())
+                .orElseThrow(() -> new RuntimeException("Country not found"))
+                .getCountryId(); // ✅ FIXED (NOT getId())
+
+        TaxRate taxRate = taxRateRepository.findActiveTax(
+                classificationId,
+                countryId,
+                regionId
+        ).orElseGet(() ->
+                taxRateRepository.findRegionTax(classificationId, countryId, regionId)
+                        .orElseGet(() ->
+                                taxRateRepository.findAnyCountryTax(classificationId, countryId)
+                                        .orElseThrow(() ->
+                                                new RuntimeException("Tax not found for country=" + request.getCountryCode())
+                                        )
+                        )
         );
-
-        TaxRate taxRate;
-
-        if (regionTax.isPresent() && regionTax.get().getRegion() != null) {
-            // ✅ Found region-specific tax
-            taxRate = regionTax.get();
-        } else {
-            taxRate = taxRateRepository
-                    .findRegionTax(
-                            request.getTaxClassificationId(),
-                            request.getCountryCode(),
-                            request.getRegionId()
-                    )
-                    .orElseGet(() ->
-                            taxRateRepository.findAnyCountryTax(
-                                    request.getTaxClassificationId(),
-                                    request.getCountryCode()
-                            ).orElseThrow(() ->
-                                    new RuntimeException("Tax not found for country=" + request.getCountryCode())
-                            )
-                    );
-        }
 
         double price = request.getPrice();
 
         List<TaxRateComponent> components = taxRate.getComponents();
+
+        if (components == null || components.isEmpty()) {
+            throw new RuntimeException("No tax components configured");
+        }
+        if (request.getTaxClassificationId() == null ||
+                request.getRegionId() == null) {
+
+            throw new RuntimeException("TaxClassificationId and RegionId are required for local tax");
+        }
 
         double totalTaxPercent = components.stream()
                 .mapToDouble(TaxRateComponent::getPercentage)
                 .sum();
 
         double totalTaxAmount = (price * totalTaxPercent) / 100;
-
-        List<TaxComponentBreakdown> componentBreakdownList =
-                components.stream()
-                        .map(component -> {
-                            double componentAmount =
-                                    (price * component.getPercentage()) / 100;
-
-                            return TaxComponentBreakdown.builder()
-                                    .componentName(component.getTaxComponentType().name())
-                                    .percentage(component.getPercentage())
-                                    .amount(componentAmount)
-                                    .build();
-                        })
-                        .toList();
 
         double finalPrice = price + totalTaxAmount;
 
@@ -93,7 +84,6 @@ public class LocalTaxServiceImpl implements TaxService {
                 .taxAmount(totalTaxAmount)
                 .finalPrice(finalPrice)
                 .taxType(taxRate.getTaxType())
-                .components(componentBreakdownList)
                 .build();
     }
 }

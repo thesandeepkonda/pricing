@@ -1,5 +1,6 @@
 package com.spacezant.pricing.controller;
 
+import com.spacezant.pricing.service.TaxFacadeService;
 import com.spacezant.pricing.service.TaxService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class TaxController {
 
     private final TaxService taxService;
+    private final TaxFacadeService taxFacadeService;
 
     // ✅ FULL TAX BREAKDOWN API
     @PostMapping("/calculate")
@@ -46,4 +48,5 @@ public class TaxController {
     public String ping() {
         return "Tax service is running 🚀";
     }
+
 }

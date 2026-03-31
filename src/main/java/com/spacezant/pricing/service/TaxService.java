@@ -13,10 +13,9 @@ import com.spacezant.pricing.dto.tax.TaxResponseDTO;
 //}
 
 
-
 public interface TaxService {
 
-    TaxResponseDTO calculateTaxDetails(TaxRequestDTO request);
+    double calculateTax(String countryCode, Double price); // ✅ REQUIRED
 
-    double calculateTax(String countryCode, Double price);
+    TaxResponseDTO calculateTaxDetails(TaxRequestDTO request);
 }

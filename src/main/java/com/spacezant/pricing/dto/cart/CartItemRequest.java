@@ -8,4 +8,6 @@ public class CartItemRequest {
     private String countryCode;
     private Long regionId;
     private Integer quantity;
+    private Double zipCode;
+
 }

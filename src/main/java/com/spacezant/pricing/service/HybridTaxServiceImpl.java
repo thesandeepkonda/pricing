@@ -12,10 +12,11 @@ import org.springframework.stereotype.Service;
 public class HybridTaxServiceImpl implements TaxService {
 
     private final LocalTaxServiceImpl localTaxService;
-    private final TaxCloudService taxCloudService;
+    private final AvalaraService avalaraService;
 
     @Override
     public double calculateTax(String countryCode, Double price) {
+
 
         if ("US".equalsIgnoreCase(countryCode)) {
             try {
@@ -24,7 +25,7 @@ public class HybridTaxServiceImpl implements TaxService {
                 request.setZipCode("90015");
                 request.setPrice(price);
 
-                return taxCloudService.calculateTax(request).getTaxAmount();
+                return avalaraService.calculateTax(request).getTaxAmount();
 
             } catch (Exception e) {
                 return localTaxService.calculateTax(countryCode, price);
@@ -34,23 +35,26 @@ public class HybridTaxServiceImpl implements TaxService {
         return localTaxService.calculateTax(countryCode, price);
     }
 
-
     @Override
     public TaxResponseDTO calculateTaxDetails(TaxRequestDTO request) {
+        System.out.println("CountryCode = [" + request.getCountryCode() + "]");
 
         if ("US".equalsIgnoreCase(request.getCountryCode())) {
             try {
-                System.out.println("➡️ Calling TaxCloud...");
-                return taxCloudService.calculateTax(request);
+                System.out.println("➡️ Calling Avalara...");
+                return avalaraService.calculateTax(request);
 
             } catch (Exception e) {
-                System.out.println("❌ TaxCloud FAILED: " + e.getMessage());
-                e.printStackTrace();  // 🔥 IMPORTANT
-
+                System.out.println("❌ Avalara FAILED → fallback");
+                e.printStackTrace();
                 return localTaxService.calculateTaxDetails(request);
             }
         }
 
+        System.out.println("➡️ Using Local Tax Service...");
         return localTaxService.calculateTaxDetails(request);
     }
+
+
+
 }
