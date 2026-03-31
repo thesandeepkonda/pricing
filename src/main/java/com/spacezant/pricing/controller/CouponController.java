@@ -37,7 +37,7 @@ public class CouponController {
     @PostMapping("/usage")
     public ResponseEntity<String> recordUsage(
             @RequestParam String couponCode,
-            @RequestParam String userId,
+            @RequestParam Long userId,
             @RequestParam String orderId,
             @RequestParam Double discountAmount) {
 

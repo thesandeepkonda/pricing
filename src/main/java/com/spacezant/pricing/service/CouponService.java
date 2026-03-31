@@ -85,7 +85,7 @@ public class CouponService {
         return dto;
     }
 
-    public void validate(Coupon coupon, String userId, Long cartAmount) {
+    public void validate(Coupon coupon, Long userId, Long cartAmount) {
 
         validateStatus(coupon);
         validateDate(coupon);
@@ -125,7 +125,7 @@ public class CouponService {
         }
     }
 
-    private void validateUserLimit(Coupon coupon, String userId) {
+    private void validateUserLimit(Coupon coupon, Long userId) {
 
         int userUsage = usageRepository
                 .countByCoupon_CouponIdAndUserId(coupon.getCouponId(), userId);
@@ -159,7 +159,7 @@ public class CouponService {
     }
 
     public void recordUsage(Coupon coupon,
-                            String userId,
+                            Long userId,
                             String orderId,
                             Double discountAmount) {
 
@@ -179,33 +179,46 @@ public class CouponService {
     }
 
 
+    public Double applyCoupon(Long userId, String code, Double currentTotal) {
 
-
-    // ================= COUPON =================
-
-    public Double applyCoupon(String code, Double currentTotal) {
-
-        if (code == null || code.isBlank()) return (double) 0;
+        if (code == null || code.isBlank()) return 0.0;
 
         Coupon c = couponRepository.findByCouponCode(code.toUpperCase())
                 .orElseThrow(() -> new RuntimeException("Invalid coupon"));
 
-        if (!"ACTIVE".equalsIgnoreCase(c.getStatus())) return (double) 0;
+        // ✅ STATUS
+        if (!"ACTIVE".equalsIgnoreCase(c.getStatus())) return 0.0;
 
-        if (c.getEndDate() != null && c.getEndDate().isBefore(LocalDate.now()))
-            return (double) 0;
+        // ✅ DATE
+        if (c.getEndDate() != null && c.getEndDate().isBefore(LocalDate.now())) {
+            return 0.0;
+        }
 
+        // ✅ MIN ORDER
         if (c.getMinOrderAmount() != null &&
-                currentTotal < c.getMinOrderAmount())
-            return (double) 0;
+                currentTotal < c.getMinOrderAmount()) {
+            return 0.0;
+        }
 
-        Integer totalUsed = c.getTotalUsed() != null ? c.getTotalUsed() : 0;
+        // ✅ GLOBAL LIMIT
+        int totalUsed = Optional.ofNullable(c.getTotalUsed()).orElse(0);
 
         if (c.getUsageLimit() != null &&
-                totalUsed >= c.getUsageLimit())
-            return (double) 0;
+                totalUsed >= c.getUsageLimit()) {
+            return 0.0;
+        }
 
-        Double discount;
+        // ✅ USER LIMIT
+        int userUsage = usageRepository
+                .countByCoupon_CouponIdAndUserId(c.getCouponId(), userId);
+
+        if (c.getPerUserLimit() != null &&
+                userUsage >= c.getPerUserLimit()) {
+            return 0.0;
+        }
+
+        // ✅ DISCOUNT CALCULATION
+        double discount;
 
         if ("PERCENTAGE".equalsIgnoreCase(c.getDiscountType())) {
 
@@ -222,6 +235,4 @@ public class CouponService {
 
         return discount;
     }
-
-
 }

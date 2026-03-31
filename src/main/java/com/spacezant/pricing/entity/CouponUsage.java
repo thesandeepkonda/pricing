@@ -14,7 +14,7 @@ public class CouponUsage {
     @Id
     private String usageId;
 
-    private String userId;
+    private Long userId;
 
     private String orderId;
 

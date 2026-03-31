@@ -13,8 +13,7 @@ public interface CouponUsageRepository extends JpaRepository<CouponUsage, String
     long countByCouponCouponId(Long couponId);
 
     // ✅ Get all usages by user
-    List<CouponUsage> findByUserId(String userId);
+    List<CouponUsage> findByUserId(Long userId);
 
     // ✅ Count usage of a coupon by a specific user
-    int countByCoupon_CouponIdAndUserId(Long couponId, String userId);
-}
+    int countByCoupon_CouponIdAndUserId(Long couponId, Long userId);}

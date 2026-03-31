@@ -8,4 +8,8 @@ import java.util.List;
 public class CartRequest {
     private List<CartItemRequest> items;
     private String couponCode;
+    private String countryCode;
+    private Long regionId;
+
+    private Long userId;
 }

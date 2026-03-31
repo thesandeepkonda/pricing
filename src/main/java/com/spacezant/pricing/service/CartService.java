@@ -3,30 +3,51 @@ package com.spacezant.pricing.service;
 import com.spacezant.pricing.dto.cart.CartItemRequest;
 import com.spacezant.pricing.dto.cart.CartRequest;
 import com.spacezant.pricing.dto.cart.CartResponse;
-import com.spacezant.pricing.dto.tax.PricingRequest;
-import com.spacezant.pricing.dto.tax.PricingResponse;
-import com.spacezant.pricing.dto.tax.TaxRequestDTO;
-import com.spacezant.pricing.dto.tax.TaxResponseDTO;
+import com.spacezant.pricing.dto.tax.*;
 import com.spacezant.pricing.entity.Variant;
+import com.spacezant.pricing.entity.VariantCountry;
+import com.spacezant.pricing.repository.VariantCountryRepository;
 import com.spacezant.pricing.repository.VariantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CartService {
 
-    private final PricingService pricingService;
+    private final VariantCountryRepository variantCountryRepository;
+    private final VariantRepository variantRepository;
+    private final DiscountService discountService;
     private final CouponService couponService;
     private final TaxService taxService;
-    private final VariantRepository variantRepository;
 
     public CartResponse calculateCart(CartRequest request) {
 
-        List<PricingResponse> itemResponses = new ArrayList<>();
+        List<Long> variantIds = request.getItems()
+                .stream()
+                .map(CartItemRequest::getVariantId)
+                .toList();
+
+        Map<Long, VariantCountry> vcMap =
+                variantCountryRepository
+                        .findAllByVariantVariantIdInAndVariantCountryCodeAndStatus(
+                                variantIds,
+                                request.getCountryCode(),
+                                "ACTIVE"
+                        )
+                        .stream()
+                        .collect(Collectors.toMap(
+                                vc -> vc.getVariant().getVariantId(),
+                                vc -> vc,
+                                (a, b) -> a
+                        ));
+
+        List<PricingResponse> responses = new ArrayList<>();
 
         double subtotal = 0;
         double totalDiscount = 0;
@@ -34,75 +55,87 @@ public class CartService {
 
         for (CartItemRequest item : request.getItems()) {
 
-            PricingRequest pricingRequest = new PricingRequest();
-            pricingRequest.setVariantId(item.getVariantId());
-            pricingRequest.setCountryCode(item.getCountryCode());
-            pricingRequest.setRegionId(item.getRegionId());
-            pricingRequest.setQuantity(item.getQuantity());
+            VariantCountry vc = vcMap.get(item.getVariantId());
+            if (vc == null) throw new RuntimeException("Price not found");
 
-            PricingResponse response =
-                    pricingService.calculatePriceWithoutCoupon(pricingRequest);
+            double basePrice = vc.getBasePrice();
+            int qty = item.getQuantity();
 
-            itemResponses.add(response);
+            double totalBase = basePrice * qty;
 
-            subtotal += response.getTotalBasePrice();
-            totalDiscount += response.getDiscountAmount();
-            totalAfterDiscount += response.getPriceAfterDiscount();
+            DiscountResult discount = discountService.calculateDiscount(
+                    item.getVariantId(),
+                    request.getCountryCode(),
+                    totalBase,
+                    qty
+            );
+
+            double discountAmount = discount.getDiscountAmount();
+            double afterDiscount = totalBase - discountAmount;
+
+            PricingResponse res = new PricingResponse();
+            res.setVariantId(item.getVariantId());
+            res.setBasePrice(basePrice);
+            res.setQuantity(qty);
+            res.setTotalBasePrice(totalBase);
+            res.setDiscountAmount(discountAmount);
+            res.setPriceAfterDiscount(afterDiscount);
+
+            res.setCurrency(vc.getCurrency());
+
+            responses.add(res);
+
+            subtotal += totalBase;
+            totalDiscount += discountAmount;
+            totalAfterDiscount += afterDiscount;
         }
 
         double couponDiscount = 0;
 
         if (request.getCouponCode() != null) {
             couponDiscount = couponService.applyCoupon(
+                    request.getUserId(),
                     request.getCouponCode(),
                     totalAfterDiscount
             );
         }
 
-        double afterCouponTotal = totalAfterDiscount - couponDiscount;
-
         double totalTax = 0;
 
-        for (int i = 0; i < itemResponses.size(); i++) {
-
-            PricingResponse response = itemResponses.get(i);
-            CartItemRequest item = request.getItems().get(i);
+        for (PricingResponse res : responses) {
 
             double ratio = totalAfterDiscount > 0
-                    ? response.getPriceAfterDiscount() / totalAfterDiscount
+                    ? res.getPriceAfterDiscount() / totalAfterDiscount
                     : 0;
 
-            double itemPriceAfterCoupon =
-                    response.getPriceAfterDiscount() - (couponDiscount * ratio);
+            double itemAfterCoupon =
+                    res.getPriceAfterDiscount() - (couponDiscount * ratio);
 
-            Variant variant = variantRepository.findById(item.getVariantId())
+            Variant variant = variantRepository.findById(res.getVariantId())
                     .orElseThrow(() -> new RuntimeException("Variant not found"));
 
-            TaxRequestDTO taxRequest = new TaxRequestDTO();
-            taxRequest.setTaxClassificationId(
+            TaxRequestDTO taxReq = new TaxRequestDTO();
+            taxReq.setTaxClassificationId(
                     variant.getTaxClassification().getId()
             );
-            taxRequest.setCountryCode(item.getCountryCode());
-            taxRequest.setRegionId(item.getRegionId());
-            taxRequest.setPrice(itemPriceAfterCoupon);
+            taxReq.setCountryCode(request.getCountryCode());
+            taxReq.setRegionId(request.getRegionId());
+            taxReq.setPrice(itemAfterCoupon);
 
-            TaxResponseDTO taxResponse =
-                    taxService.calculateTaxDetails(taxRequest);
+            TaxResponseDTO taxRes = taxService.calculateTaxDetails(taxReq);
 
-            response.setTotalTaxAmount(taxResponse.getTaxAmount());
-            response.setFinalPrice(taxResponse.getFinalPrice());
+            res.setTotalTaxAmount(taxRes.getTaxAmount());
+            res.setFinalPrice(taxRes.getFinalPrice());
 
-            totalTax += taxResponse.getTaxAmount();
+            totalTax += taxRes.getTaxAmount();
         }
 
-        double grandTotal = afterCouponTotal + totalTax;
+        double grandTotal = (totalAfterDiscount - couponDiscount) + totalTax;
 
         return CartResponse.builder()
-                .items(itemResponses)
-
+                .items(responses)
                 .totalBasePrice(subtotal)
                 .totalProductDiscount(totalDiscount)
-
                 .couponDiscount(couponDiscount)
                 .totalTax(totalTax)
                 .grandTotal(grandTotal)

@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class PricingRequest {
 
+    private Long userId;
     private Long variantId;
     private String countryCode;
     private Long regionId;

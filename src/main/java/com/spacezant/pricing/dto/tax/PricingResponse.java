@@ -1,12 +1,16 @@
 package com.spacezant.pricing.dto.tax;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class PricingResponse {
 
     private Long variantId;
@@ -18,8 +22,8 @@ public class PricingResponse {
     private String discountName;
     private Double discountAmount;
 
-    private String couponCode;        // 🔥 NEW
-    private Double couponDiscount;    // 🔥 NEW
+    private String couponCode;
+    private Double couponDiscount;
 
     private Double priceAfterDiscount;
 
@@ -30,5 +34,6 @@ public class PricingResponse {
     private Long taxClassificationId;
     private String countryCode;
     private Long regionId;
+    private String currency;
 }
 

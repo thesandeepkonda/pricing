@@ -16,24 +16,29 @@ public class PricingService {
 
     private final VariantCountryRepository variantCountryRepository;
     private final VariantRepository variantRepository;
-    private final DiscountService discountService; // future use
+    private final DiscountService discountService;
     private final TaxService taxService;
     private final CouponService couponService;
 
     public PricingResponse calculatePrice(PricingRequest request) {
 
-        // ✅ 1. Variant
+        // ✅ 1. Fetch Variant
         Variant variant = variantRepository.findById(request.getVariantId())
-                .orElseThrow(() -> new RuntimeException("Variant not found"));
+                .orElseThrow(() -> new RuntimeException(
+                        "Variant not found: " + request.getVariantId()
+                ));
 
-        // ✅ 2. Price
+        // ✅ 2. Fetch VariantCountry (price + currency)
         VariantCountry vc = variantCountryRepository
                 .findByVariantVariantIdAndVariantCountryCodeAndStatus(
                         request.getVariantId(),
                         request.getCountryCode(),
                         "ACTIVE"
                 )
-                .orElseThrow(() -> new RuntimeException("Price not found"));
+                .orElseThrow(() -> new RuntimeException(
+                        "Price not found for variantId=" + request.getVariantId()
+                                + " country=" + request.getCountryCode()
+                ));
 
         double basePrice = vc.getBasePrice();
         int qty = request.getQuantity();
@@ -50,17 +55,21 @@ public class PricingService {
         double productDiscount = discountResult.getDiscountAmount();
         double afterProductDiscount = totalBase - productDiscount;
 
-        // ✅ 4. COUPON
-        double couponDiscount = couponService.applyCoupon(
-                request.getCouponCode(),
-                afterProductDiscount
-        );
+        // ✅ 4. COUPON (WITH USER ID)
+        double couponDiscount = 0;
+
+        if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
+            couponDiscount = couponService.applyCoupon(
+                    request.getUserId(),          // 🔥 IMPORTANT FIX
+                    request.getCouponCode(),
+                    afterProductDiscount
+            );
+        }
 
         double afterCoupon = afterProductDiscount - couponDiscount;
 
         // ✅ 5. TAX
         TaxRequestDTO taxRequest = new TaxRequestDTO();
-
         taxRequest.setTaxClassificationId(
                 variant.getTaxClassification().getId()
         );
@@ -68,7 +77,7 @@ public class PricingService {
         taxRequest.setRegionId(request.getRegionId());
         taxRequest.setPrice(afterCoupon);
 
-        // 🔥 IMPORTANT (US TAX)
+        // Optional (for advanced tax cases like US)
         taxRequest.setZipCode(request.getZipCode());
         taxRequest.setCity(request.getCity());
         taxRequest.setState(request.getState());
@@ -76,7 +85,7 @@ public class PricingService {
 
         TaxResponseDTO taxResponse = taxService.calculateTaxDetails(taxRequest);
 
-        // ✅ 6. PREPARE BREAKDOWN FIRST
+        // ✅ 6. TAX BREAKDOWN
         List<TaxBreakdown> breakdown;
 
         if (taxResponse.getComponents() != null) {
@@ -97,7 +106,7 @@ public class PricingService {
             );
         }
 
-        // ✅ 7. FINAL RESPONSE (ONLY ONE RETURN)
+        // ✅ 7. FINAL RESPONSE (CURRENCY FIXED 🔥)
         return PricingResponse.builder()
                 .variantId(variant.getVariantId())
 
@@ -118,72 +127,7 @@ public class PricingService {
 
                 .finalPrice(taxResponse.getFinalPrice())
 
-                .build();
-    }
-    public PricingResponse calculatePriceWithoutCoupon(PricingRequest request) {
-
-        // ✅ 1. Variant
-        Variant variant = variantRepository.findById(request.getVariantId())
-                .orElseThrow(() -> new RuntimeException("Variant not found"));
-
-        // ✅ 2. Country Price
-        VariantCountry vc = variantCountryRepository
-                .findByVariantVariantIdAndVariantCountryCodeAndStatus(
-                        request.getVariantId(),
-                        request.getCountryCode(),
-                        "ACTIVE"
-                )
-                .orElseThrow(() -> new RuntimeException("Price not found"));
-
-        double basePrice = vc.getBasePrice();
-        int qty = request.getQuantity();
-        double totalBase = basePrice * qty;
-
-        // ✅ 3. PRODUCT DISCOUNT ONLY
-        DiscountResult discountResult = discountService.calculateDiscount(
-                variant.getVariantId(),
-                request.getCountryCode(),
-                totalBase,
-                qty
-        );
-
-        double discountAmount = discountResult.getDiscountAmount();
-        double priceAfterDiscount = totalBase - discountAmount;
-
-
-
-        TaxRequestDTO taxRequest = new TaxRequestDTO();
-        taxRequest.setTaxClassificationId(
-                variant.getTaxClassification().getId()
-        );
-        taxRequest.setCountryCode(request.getCountryCode());
-        taxRequest.setRegionId(request.getRegionId());
-        taxRequest.setPrice(priceAfterDiscount);
-
-
-        TaxResponseDTO taxResponse = taxService.calculateTaxDetails(taxRequest);
-
-        // ✅ 4. RESPONSE (IMPORTANT: include internal fields)
-        return PricingResponse.builder()
-                .variantId(variant.getVariantId())
-
-                .basePrice(basePrice)
-                .quantity(qty)
-                .totalBasePrice(totalBase)
-
-                .discountName(discountResult.getDiscountName())
-                .discountAmount(discountAmount)
-
-                .priceAfterDiscount(priceAfterDiscount)
-
-                // 🔥 REQUIRED FOR CART (VERY IMPORTANT)
-                .taxClassificationId(variant.getTaxClassification().getId())
-                .countryCode(request.getCountryCode())
-                .regionId(request.getRegionId())
-
-                // initial tax (will be overridden in cart)
-                .totalTaxAmount(taxResponse.getTaxAmount())
-                .finalPrice(taxResponse.getFinalPrice())
+                .currency(vc.getCurrency()) // 🔥 CRITICAL FIX
 
                 .build();
     }
